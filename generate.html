@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LambdaJobsAI — Generate Resume</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg:        #f8fafc;
+  --surface:   #ffffff;
+  --border:    #e2e8f0;
+  --border2:   #cbd5e1;
+  --ink:       #0f172a;
+  --ink2:      #334155;
+  --muted:     #64748b;
+  --accent:    #6366f1;
+  --accent-dk: #4f46e5;
+  --accent-bg: rgba(99,102,241,.07);
+  --accent-br: rgba(99,102,241,.2);
+  --green:     #059669;
+  --green-bg:  rgba(5,150,105,.07);
+  --red:       #dc2626;
+  --red-bg:    rgba(220,38,38,.06);
+  --term-bg:   #0d1117;
+  --term-fg:   #c9d1d9;
+  --sh-sm:     0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --r:         12px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);
+  min-height:100vh;-webkit-font-smoothing:antialiased}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+
+/* ── Nav ───────────────────────────────────────────── */
+nav{display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:54px;background:var(--surface);
+  border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;
+  box-shadow:var(--sh-sm)}
+
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;
+  font-size:15px;font-weight:800;color:var(--ink);letter-spacing:-.03em}
+.logo-mark{width:27px;height:27px;border-radius:8px;flex-shrink:0;
+  background:linear-gradient(135deg,#6366f1,#a78bfa);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:14px;font-weight:800}
+
+.back-link{display:flex;align-items:center;gap:5px;text-decoration:none;
+  font-size:13px;font-weight:500;color:var(--muted);
+  padding:7px 13px;border-radius:9px;border:1px solid var(--border);
+  background:var(--bg);transition:.15s}
+.back-link:hover{color:var(--ink2);border-color:var(--border2);background:#f1f5f9}
+
+/* ── Layout ────────────────────────────────────────── */
+.layout{display:grid;grid-template-columns:400px 1fr;
+  height:calc(100vh - 54px)}
+
+/* ── Form column ───────────────────────────────────── */
+.form-col{padding:26px 22px;border-right:1px solid var(--border);
+  overflow-y:auto;background:var(--surface);display:flex;flex-direction:column;gap:20px}
+
+.page-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-.04em}
+.page-sub{font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5}
+
+.field{display:flex;flex-direction:column;gap:6px}
+.label{font-size:11px;font-weight:700;color:var(--ink2);
+  text-transform:uppercase;letter-spacing:.07em}
+.label .opt{font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0}
+
+textarea,input[type=text]{
+  width:100%;padding:10px 12px;border-radius:10px;
+  border:1.5px solid var(--border);font:inherit;font-size:13.5px;
+  color:var(--ink);background:var(--surface);transition:.15s;resize:vertical}
+textarea:focus,input[type=text]:focus{
+  outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+textarea{min-height:160px;line-height:1.6}
+textarea::placeholder,input[type=text]::placeholder{color:#94a3b8}
+
+/* ── Model grid ────────────────────────────────────── */
+.model-list{display:flex;flex-direction:column;gap:7px}
+.model-card{display:flex;align-items:center;gap:11px;padding:11px 13px;
+  border-radius:10px;border:1.5px solid var(--border);cursor:pointer;
+  transition:.15s;background:var(--surface);user-select:none}
+.model-card:hover{border-color:var(--border2);background:#f8fafc}
+.model-card.on{border-color:var(--accent);background:var(--accent-bg)}
+.model-card input{display:none}
+.model-radio{width:16px;height:16px;border-radius:50%;border:2px solid var(--border2);
+  flex-shrink:0;transition:.15s;display:flex;align-items:center;justify-content:center}
+.model-card.on .model-radio{border-color:var(--accent);background:var(--accent)}
+.model-card.on .model-radio::after{content:'';width:5px;height:5px;border-radius:50%;background:#fff}
+.model-name{font-size:13.5px;font-weight:600;color:var(--ink2)}
+.model-card.on .model-name{color:var(--accent-dk)}
+.model-tag{margin-left:auto;font-size:10px;font-weight:700;padding:2px 8px;
+  border-radius:20px;background:var(--accent-bg);color:var(--accent);
+  border:1px solid var(--accent-br);letter-spacing:.04em}
+.no-models{padding:14px;border-radius:10px;border:1.5px dashed var(--border2);
+  text-align:center;color:var(--muted);font-size:13px;line-height:1.6}
+
+/* ── Toggle ────────────────────────────────────────── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;
+  padding:12px 13px;border-radius:10px;border:1.5px solid var(--border);
+  cursor:pointer;transition:.15s;gap:10px}
+.toggle-row:hover{border-color:var(--border2)}
+.toggle-text .tl{font-size:13.5px;font-weight:600;color:var(--ink2)}
+.toggle-text .ts{font-size:11px;color:var(--muted);margin-top:1px}
+.switch{position:relative;width:40px;height:22px;flex-shrink:0}
+.switch input{display:none}
+.slider{position:absolute;inset:0;border-radius:99px;background:#cbd5e1;
+  transition:.2s;cursor:pointer}
+.slider::before{content:'';position:absolute;width:16px;height:16px;
+  border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s;
+  box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:var(--accent)}
+input:checked+.slider::before{transform:translateX(18px)}
+
+/* ── Divider ───────────────────────────────────────── */
+.divider{height:1px;background:var(--border);margin:0 -22px}
+
+/* ── Generate button ───────────────────────────────── */
+.btn-gen{width:100%;padding:13px;border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-dk));
+  color:#fff;font:inherit;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;transition:.15s;letter-spacing:-.01em;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 4px 14px rgba(99,102,241,.28);margin-top:auto}
+.btn-gen:hover:not(:disabled){filter:brightness(1.06);transform:translateY(-1px);
+  box-shadow:0 6px 18px rgba(99,102,241,.34)}
+.btn-gen:disabled{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
+.spinner{width:15px;height:15px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.3);border-top-color:#fff;
+  animation:spin .65s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Output column ─────────────────────────────────── */
+.out-col{display:flex;flex-direction:column;overflow:hidden}
+
+.out-header{display:flex;align-items:center;justify-content:space-between;
+  padding:13px 20px;background:var(--surface);border-bottom:1px solid var(--border);
+  flex-shrink:0}
+.out-title{font-size:13px;font-weight:600;color:var(--ink2)}
+.out-status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:var(--border2);transition:.3s}
+.status-dot.running{background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+.status-dot.ok{background:var(--green)}
+.status-dot.err{background:var(--red)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.terminal{flex:1;overflow-y:auto;background:var(--term-bg);
+  padding:20px 22px;font-family:'SF Mono','Fira Code','Consolas',monospace;
+  font-size:12.5px;line-height:1.7;color:var(--term-fg)}
+
+.empty-state{height:100%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;gap:10px}
+.empty-icon{font-size:38px;opacity:.25}
+.empty-txt{color:#374151;font-size:13px;font-family:'Inter',sans-serif;line-height:1.6}
+
+.t-line{white-space:pre-wrap;word-break:break-word}
+.t-dim {color:#374151}
+.t-info{color:#60a5fa}
+.t-ok  {color:#34d399}
+.t-warn{color:#fbbf24}
+.t-err {color:#f87171}
+
+.cursor{display:inline-block;width:7px;height:13px;background:var(--accent);
+  animation:blink 1s step-end infinite;vertical-align:text-bottom;margin-left:2px}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── Done banner ───────────────────────────────────── */
+.done-banner{display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+  padding:14px 20px;flex-shrink:0;border-top:1px solid var(--border)}
+.done-banner.ok {background:var(--green-bg)}
+.done-banner.err{background:var(--red-bg)}
+.done-msg{font-size:13px;font-weight:600;flex:1}
+.done-banner.ok  .done-msg{color:var(--green)}
+.done-banner.err .done-msg{color:var(--red)}
+.done-btn{padding:8px 16px;border-radius:9px;font:inherit;font-size:13px;
+  font-weight:600;cursor:pointer;border:none;transition:.15s;text-decoration:none;
+  display:inline-flex;align-items:center;gap:5px}
+.done-btn.go{background:var(--green);color:#fff}
+.done-btn.go:hover{filter:brightness(1.1)}
+.done-btn.dismiss{background:var(--red-bg);color:var(--red);border:1px solid rgba(220,38,38,.15)}
+.done-btn.dismiss:hover{background:rgba(220,38,38,.12)}
+
+/* ── Responsive ────────────────────────────────────── */
+@media(max-width:900px){
+  .layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  .form-col{border-right:none;border-bottom:1px solid var(--border)}
+  .out-col{min-height:420px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">
+    <div class="logo-mark">λ</div>
+    LambdaJobsAI
+  </a>
+  <a href="/" class="back-link">
+    <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10 12L6 8l4-4"/>
+    </svg>
+    Dashboard
+  </a>
+</nav>
+
+<div class="layout">
+
+  <!-- ── Form ─────────────────────────────────────────── -->
+  <div class="form-col">
+
+    <div>
+      <div class="page-title">Generate Resume</div>
+      <div class="page-sub">Paste a job description — AI tailors your resume and cover letter in ~60s.</div>
+    </div>
+
+    <div class="field">
+      <div class="label">AI Model</div>
+      <div id="modelList" class="model-list">
+        <div class="no-models">Detecting models…</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="jdInput">Job Description</label>
+      <textarea id="jdInput" placeholder="Paste the full job description here…" rows="9"></textarea>
+    </div>
+
+    <div class="field">
+      <label class="label" for="urlInput">Job URL <span class="opt">(optional)</span></label>
+      <input type="text" id="urlInput" placeholder="https://company.com/careers/…">
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <div class="label">Options</div>
+      <label class="toggle-row">
+        <div class="toggle-text">
+          <div class="tl">Generate Cover Letter</div>
+          <div class="ts">3-paragraph letter alongside the resume</div>
+        </div>
+        <label class="switch" onclick="event.stopPropagation()">
+          <input type="checkbox" id="coverToggle" checked>
+          <span class="slider"></span>
+        </label>
+      </label>
+    </div>
+
+    <button id="genBtn" class="btn-gen" onclick="startGenerate()">
+      <span id="btnIcon">✦</span>
+      <span id="btnLabel">Generate Resume</span>
+    </button>
+
+  </div>
+
+  <!-- ── Output ───────────────────────────────────────── -->
+  <div class="out-col">
+    <div class="out-header">
+      <span class="out-title">AI Output</span>
+      <span class="out-status">
+        <div class="status-dot" id="sDot"></div>
+        <span id="sText">Waiting</span>
+      </span>
+    </div>
+    <div class="terminal" id="terminal">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">⚡</div>
+        <div class="empty-txt">Select a model, paste a job description,<br>then hit Generate.</div>
+      </div>
+    </div>
+    <div id="doneBanner" style="display:none" class="done-banner"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+let selectedModel = null;
+let busy = false;
+
+// ── Load available models ────────────────────────────
+async function loadModels() {
+  try {
+    const { models } = await (await fetch('/api/models')).json();
+    const el = document.getElementById('modelList');
+    if (!models.length) {
+      el.innerHTML = `<div class="no-models">
+        No AI CLI detected.<br>Install one: <code>npm i -g @anthropic-ai/claude-code</code>
+      </div>`;
+      return;
+    }
+    el.innerHTML = models.map((m, i) => `
+      <label class="model-card${i === 0 ? ' on' : ''}" onclick="pick('${m.id}',this)">
+        <input type="radio" name="m" value="${m.id}"${i === 0 ? ' checked' : ''}>
+        <div class="model-radio"></div>
+        <span class="model-name">${m.label}</span>
+        <span class="model-tag">${m.id}</span>
+      </label>`).join('');
+    selectedModel = models[0].id;
+  } catch {
+    document.getElementById('modelList').innerHTML =
+      '<div class="no-models">Could not reach server.</div>';
+  }
+}
+
+function pick(id, el) {
+  selectedModel = id;
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// ── Terminal helpers ─────────────────────────────────
+function clearTerm() {
+  const t = document.getElementById('terminal');
+  t.innerHTML = '';
+  document.getElementById('emptyState')?.remove();
+}
+
+function addLine(text, cls = '') {
+  const t = document.getElementById('terminal');
+  const d = document.createElement('div');
+  d.className = 't-line' + (cls ? ' ' + cls : '');
+  d.textContent = text;
+  t.appendChild(d);
+  t.scrollTop = t.scrollHeight;
+}
+
+function setStatus(text, state = '') {
+  document.getElementById('sText').textContent = text;
+  const dot = document.getElementById('sDot');
+  dot.className = 'status-dot' + (state ? ' ' + state : '');
+}
+
+// ── Main generate ────────────────────────────────────
+async function startGenerate() {
+  if (busy) return;
+
+  const jd    = document.getElementById('jdInput').value.trim();
+  const url   = document.getElementById('urlInput').value.trim();
+  const cover = document.getElementById('coverToggle').checked;
+
+  if (!selectedModel) { alert('Select a model.'); return }
+  if (!jd)            { alert('Paste a job description.'); return }
+
+  busy = true;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = true;
+  document.getElementById('btnIcon').outerHTML = '<div class="spinner" id="btnIcon"></div>';
+  document.getElementById('btnLabel').textContent = 'Generating…';
+  document.getElementById('doneBanner').style.display = 'none';
+
+  clearTerm();
+  addLine(`$ ${selectedModel}  starting…`, 't-info');
+  addLine('');
+  setStatus('Running', 'running');
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cli: selectedModel, job_description: jd, job_url: url, with_cover: cover }),
+    });
+
+    if (!resp.ok) {
+      const e = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+      throw new Error(e.error || `HTTP ${resp.status}`);
+    }
+
+    const reader  = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let   buf     = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop();
+      for (const part of parts) {
+        if (!part.startsWith('data:')) continue;
+        try {
+          const ev = JSON.parse(part.slice(5).trim());
+          if (ev.type === 'line') {
+            const t = ev.text || '';
+            const c = /^(error|Error|✗|fatal)/i.test(t) ? 't-err'
+                    : /^(warning|warn)/i.test(t)         ? 't-warn'
+                    : /^(✓|Success|Done|Completed)/i.test(t) ? 't-ok'
+                    : /^(\$|>|python3|Running)/i.test(t) ? 't-info'
+                    : '';
+            addLine(t, c);
+          } else if (ev.type === 'done') {
+            finish(ev.code === 0);
+          } else if (ev.type === 'error') {
+            addLine('✗ ' + ev.message, 't-err');
+            finish(false);
+          }
+        } catch { /* skip malformed */ }
+      }
+    }
+  } catch (e) {
+    addLine('✗ ' + e.message, 't-err');
+    finish(false);
+  }
+}
+
+function finish(ok) {
+  busy = false;
+  const btn = document.getElementById('genBtn');
+  btn.disabled = false;
+  const sp = document.getElementById('btnIcon');
+  if (sp) sp.outerHTML = '<span id="btnIcon">✦</span>';
+  document.getElementById('btnLabel').textContent = 'Generate Resume';
+
+  setStatus(ok ? 'Done ✓' : 'Failed ✗', ok ? 'ok' : 'err');
+
+  const banner = document.getElementById('doneBanner');
+  banner.style.display = 'flex';
+  banner.className = 'done-banner ' + (ok ? 'ok' : 'err');
+  banner.innerHTML = ok
+    ? `<span class="done-msg">✓ Resume generated successfully</span>
+       <a class="done-btn go" href="/">View in Dashboard →</a>`
+    : `<span class="done-msg">✗ Generation failed — check output above</span>
+       <button class="done-btn dismiss" onclick="this.closest('.done-banner').style.display='none'">Dismiss</button>`;
+}
+
+loadModels();
+</script>
+</body>
+</html>
