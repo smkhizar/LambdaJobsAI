@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>LambdaJobsAI — Dashboard</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+:root{
+  --bg:#f0f4f8;--bg2:#fff;--ink:#0f172a;--ink2:#334155;--muted:#64748b;
+  --line:#e2e8f0;--accent:#6366f1;--adim:rgba(99,102,241,.09);--amid:rgba(99,102,241,.18);
+  --purple:#8b5cf6;--green:#059669;--gdim:rgba(5,150,105,.1);
+  --orange:#d97706;--odim:rgba(217,119,6,.1);--red:#dc2626;--rdim:rgba(220,38,38,.08);
+  --sh:0 4px 16px rgba(15,23,42,.08),0 2px 6px rgba(15,23,42,.04);
+  --shs:0 1px 3px rgba(15,23,42,.07);--r:14px;--rs:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased}
+.hidden{display:none!important}
+
+nav{display:flex;align-items:center;justify-content:space-between;padding:0 28px;height:60px;
+  background:var(--bg2);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:100;
+  box-shadow:var(--shs);gap:16px}
+.nav-left{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 3px rgba(5,150,105,.18);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+nav h1{font-size:18px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-sub{font-size:12px;color:var(--muted);padding:3px 10px;background:var(--bg);
+  border-radius:20px;border:1px solid var(--line)}
+.nav-right{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end}
+.search{padding:8px 14px;border-radius:20px;border:1.5px solid var(--line);
+  font:inherit;font-size:13px;background:var(--bg);color:var(--ink);
+  transition:.18s;max-width:260px;width:100%}
+.search:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--adim)}
+.search::placeholder{color:#94a3b8}
+.fsel{padding:8px 32px 8px 14px;border-radius:20px;border:1.5px solid var(--line);
+  font:inherit;font-size:13px;background:var(--bg);color:var(--ink);cursor:pointer;
+  appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M6 8L1 3h10z' fill='%2364748b'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center}
+.fsel:focus{outline:none;border-color:var(--accent)}
+.btn-ref{padding:8px 16px;border-radius:20px;font:inherit;font-size:13px;font-weight:600;
+  cursor:pointer;border:1.5px solid var(--line);background:var(--bg2);color:var(--muted);transition:.15s}
+.btn-ref:hover{border-color:var(--accent);color:var(--accent);background:var(--adim)}
+
+.body{max-width:1440px;margin:0 auto;padding:28px 24px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:var(--rs);
+  padding:20px 16px;text-align:center;box-shadow:var(--shs);transition:.2s}
+.stat:hover{box-shadow:var(--sh);transform:translateY(-1px)}
+.stat .n{font-size:32px;font-weight:800;letter-spacing:-.03em;
+  background:linear-gradient(135deg,var(--accent),var(--purple));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .l{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+
+.twrap{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);
+  overflow:hidden;box-shadow:var(--sh)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+thead{background:var(--bg)}
+th{text-align:left;padding:12px 14px;color:var(--muted);font-size:11px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8faff}
+.dm{display:block;font-size:13px;color:var(--ink2);font-weight:500}
+.dt{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.muted{color:var(--muted)}
+.url-chip{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;
+  border-radius:20px;font-size:11px;font-weight:600;background:var(--adim);
+  color:var(--accent);text-decoration:none;border:1px solid var(--amid);
+  white-space:nowrap;transition:.12s}
+.url-chip:hover{background:var(--amid)}
+.rt{font-size:11px;background:var(--bg);padding:3px 8px;border-radius:6px;
+  color:var(--accent);border:1px solid var(--line);font-family:monospace;font-weight:600}
+
+.badge{display:inline-flex;align-items:center;padding:4px 10px;border-radius:20px;
+  font-size:11px;font-weight:700;text-transform:capitalize;letter-spacing:.02em}
+.badge-generated{background:var(--adim);color:var(--accent);border:1px solid var(--amid)}
+.badge-applied{background:var(--gdim);color:var(--green);border:1px solid rgba(5,150,105,.2)}
+.badge-interview{background:rgba(139,92,246,.1);color:var(--purple);border:1px solid rgba(139,92,246,.2)}
+.badge-rejected{background:var(--rdim);color:var(--red);border:1px solid rgba(220,38,38,.15)}
+
+.chip{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;
+  background:var(--adim);color:var(--accent);text-decoration:none;
+  transition:.12s;border:1px solid var(--amid)}
+.chip:hover{background:var(--amid)}
+.chip.pdf{background:var(--odim);color:var(--orange);border-color:rgba(217,119,6,.2)}
+.chip.cl{background:var(--gdim);color:var(--green);border-color:rgba(5,150,105,.2)}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:8px;font-weight:600;cursor:pointer;border:none;transition:.15s}
+.btn-icon{padding:6px 12px;font-size:13px;border-radius:8px;background:transparent;
+  color:var(--muted);border:1.5px solid var(--line);cursor:pointer;transition:.15s}
+.btn-icon:hover{color:var(--accent);border-color:var(--accent);background:var(--adim)}
+.bg{background:var(--green);color:#fff}
+.bp{background:var(--purple);color:#fff}
+.br{background:var(--red);color:#fff}
+.bgh{background:transparent;color:var(--muted);border:1.5px solid var(--line)}
+.bgh:hover{color:var(--ink2);border-color:var(--line);background:var(--bg)}
+
+.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(15,23,42,.45);
+  backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:20px}
+.modal{background:var(--bg2);border-radius:var(--r);border:1px solid var(--line);
+  max-width:940px;width:100%;max-height:90vh;overflow-y:auto;
+  box-shadow:0 20px 60px rgba(15,23,42,.12)}
+.mhead{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;
+  border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg2);z-index:1}
+.mhead h2{font-size:18px;font-weight:800;letter-spacing:-.02em}
+.mbody{padding:24px}
+.dgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px}
+.df{display:flex;flex-direction:column;gap:4px}
+.df .dl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.df .dv{font-size:14px;font-weight:500;color:var(--ink2)}
+.dsec{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.dsec h3{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px}
+.abar{display:flex;gap:8px;flex-wrap:wrap;padding:18px 24px;border-top:1px solid var(--line);
+  background:var(--bg);border-radius:0 0 var(--r) var(--r)}
+.pview{width:100%;height:500px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#f1f5f9;margin-top:8px}
+.pview iframe{width:100%;height:100%;border:0}
+.jdpre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;
+  font-size:12px;max-height:200px;overflow-y:auto;color:var(--muted);line-height:1.65;
+  font-family:monospace;white-space:pre-wrap}
+.dl-link{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--rs);
+  background:var(--adim);color:var(--accent);font-weight:600;font-size:13px;
+  text-decoration:none;border:1px solid var(--amid);transition:.15s}
+.dl-link:hover{background:var(--amid)}
+
+.kwr{margin-bottom:10px}
+.kwl{font-size:11px;font-weight:700;margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em}
+.kwl.m{color:var(--green)}.kwl.x{color:var(--orange)}
+.kws{display:flex;flex-wrap:wrap;gap:4px}
+.kp{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.kp.m{background:var(--gdim);color:var(--green);border:1px solid rgba(5,150,105,.2)}
+.kp.x{background:var(--odim);color:var(--orange);border:1px solid rgba(217,119,6,.2)}
+
+.empty{text-align:center;padding:80px 24px;color:var(--muted)}
+.empty h3{font-size:20px;color:var(--ink);margin-bottom:10px;font-weight:700}
+.empty p{font-size:14px;line-height:1.6}
+.empty code{background:var(--bg);border:1px solid var(--line);border-radius:6px;
+  padding:2px 8px;font-size:13px;color:var(--accent)}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:1fr 1fr}
+  .dgrid{grid-template-columns:1fr}
+  .body{padding:16px 14px}
+}
+@media(max-width:600px){nav{padding:0 14px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-left">
+    <div class="dot"></div>
+    <h1>LambdaJobsAI</h1>
+    <span class="nav-sub">Dashboard</span>
+  </div>
+  <div class="nav-right">
+    <input id="search" class="search" type="text" placeholder="Search company or title…">
+    <select id="fstatus" class="fsel">
+      <option value="">All statuses</option>
+      <option value="generated">Generated</option>
+      <option value="applied">Applied</option>
+      <option value="interview">Interview</option>
+      <option value="rejected">Rejected</option>
+    </select>
+    <button class="btn-ref" onclick="fetchData()">↺ Refresh</button>
+  </div>
+</nav>
+
+<div class="body">
+  <div id="stats" class="stats"></div>
+  <div id="table" class="twrap"></div>
+</div>
+
+<div id="modal" class="modal-bg hidden" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhead">
+      <h2 id="mtitle"></h2>
+      <button class="btn-sm bgh" onclick="closeModal()">✕ Close</button>
+    </div>
+    <div class="mbody" id="mbody"></div>
+    <div class="abar" id="mabar"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+function esc(s){
+  if(!s)return'';
+  const d=document.createElement('div');d.textContent=s;return d.innerHTML;
+}
+
+let DATA=null;
+
+async function fetchData(){
+  try{
+    const res=await fetch('/api/applications');
+    DATA=await res.json();
+    render();
+  }catch(e){
+    document.getElementById('table').innerHTML=
+      '<div class="empty"><h3>Cannot connect to server</h3><p>Run <code>python3 server.py</code> from the project root.</p></div>';
+  }
+}
+
+function render(){
+  if(!DATA)return;
+  const search=(document.getElementById('search').value||'').toLowerCase();
+  const fst=document.getElementById('fstatus').value||'';
+  const all=DATA.applications||[];
+  let apps=all.slice();
+  if(search) apps=apps.filter(a=>
+    (a.company_name||'').toLowerCase().includes(search)||
+    (a.job_title||'').toLowerCase().includes(search)
+  );
+  if(fst) apps=apps.filter(a=>a.status===fst);
+
+  document.getElementById('stats').innerHTML=[
+    {n:all.length,l:'Applications'},
+    {n:new Set(all.map(a=>a.company_slug)).size,l:'Companies'},
+    {n:all.filter(a=>a.tailored).length,l:'Tailored Resumes'},
+    {n:all.filter(a=>a.cover_letter_generated).length,l:'Cover Letters'},
+  ].map(s=>`<div class="stat"><div class="n">${s.n}</div><div class="l">${s.l}</div></div>`).join('');
+
+  if(!apps.length){
+    document.getElementById('table').innerHTML=
+      '<div class="empty"><h3>No applications yet</h3><p>Give any AI agent <code>AGENT.md</code> + a job URL or description to generate your first tailored resume.</p></div>';
+    return;
+  }
+
+  const rows=apps.map(a=>{
+    const d=new Date(a.created_at);
+    const dateStr=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const timeStr=d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+    const urlCell=a.job_url
+      ?`<a class="url-chip" href="${esc(a.job_url)}" target="_blank">↗ Link</a>`
+      :'<span class="muted">—</span>';
+    const files=(a.files||[]).map(f=>{
+      const fname=f.file_path.split('/').pop();
+      const fpath='output/'+a.company_slug+'/'+encodeURIComponent(fname);
+      const cls=f.file_type==='resume_pdf'?'pdf':f.file_type==='cover_letter_pdf'?'cl':'';
+      const label=f.file_type==='resume_pdf'?'Resume':f.file_type==='cover_letter_pdf'?'Cover':f.file_type==='tailored_json'?'JSON':'File';
+      return`<a class="chip ${cls}" href="${fpath}" target="_blank">${label}</a>`;
+    }).join('');
+    const safeA=JSON.stringify(a).replace(/"/g,'&quot;');
+    return`<tr>
+      <td><span class="dm">${dateStr}</span><span class="dt">${timeStr}</span></td>
+      <td><strong>${esc(a.company_name)}</strong></td>
+      <td style="color:var(--ink2);font-size:13px">${esc(a.job_title||'—')}</td>
+      <td>${urlCell}</td>
+      <td><span class="rt">${esc(a.llm_runtime||'—')}</span></td>
+      <td><span class="badge badge-${a.status}">${esc(a.status)}</span></td>
+      <td><div class="chips">${files}</div></td>
+      <td><button class="btn-icon" onclick="showDetail(${safeA})">Details</button></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('table').innerHTML=`
+    <table>
+      <thead><tr>
+        <th>Date</th><th>Company</th><th>Job Title</th><th>URL</th>
+        <th>AI</th><th>Status</th><th>Files</th><th></th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function df(label,value){
+  return`<div class="df"><div class="dl">${label}</div><div class="dv">${value}</div></div>`;
+}
+
+function showDetail(a){
+  document.getElementById('mtitle').textContent=`${a.company_name} — ${a.job_title||'Untitled'}`;
+  const kr=a.keyword_report||{};
+
+  let body=`<div class="dgrid">
+    ${df('Status',`<span class="badge badge-${a.status}">${esc(a.status)}</span>`)}
+    ${df('AI Runtime',esc(a.llm_runtime||'—'))}
+    ${df('Tailored',a.tailored?'Yes':'No')}
+    ${df('Cover Letter',a.cover_letter_generated?'Yes':'No')}
+    ${df('Created',new Date(a.created_at).toLocaleString())}
+    ${a.job_url?df('Job URL',`<a href="${esc(a.job_url)}" target="_blank" style="color:var(--accent)">${esc(a.job_url).substring(0,70)}</a>`):''}
+  </div>`;
+
+  const pdfFile=(a.files||[]).find(f=>f.file_type==='resume_pdf');
+  if(pdfFile){
+    const fname=pdfFile.file_path.split('/').pop();
+    const fpath='output/'+a.company_slug+'/'+encodeURIComponent(fname);
+    body+=`<div class="dsec"><h3>Resume PDF</h3>
+      <a class="dl-link" href="${fpath}" target="_blank">↓ Download Resume</a>
+      <div class="pview"><iframe src="${fpath}"></iframe></div>
+    </div>`;
+  }
+
+  const clFile=(a.files||[]).find(f=>f.file_type==='cover_letter_pdf');
+  if(clFile){
+    const fname=clFile.file_path.split('/').pop();
+    const fpath='output/'+a.company_slug+'/'+encodeURIComponent(fname);
+    body+=`<div class="dsec"><h3>Cover Letter</h3>
+      <a class="dl-link" href="${fpath}" target="_blank">↓ Download Cover Letter</a>
+    </div>`;
+  }
+
+  if(a.job_description){
+    body+=`<div class="dsec"><h3>Job Description</h3>
+      <div class="jdpre">${esc((a.job_description||'').substring(0,3000))}</div>
+    </div>`;
+  }
+
+  const m=kr.matched_keywords||[];
+  const x=kr.missing_keywords||[];
+  if(m.length||x.length){
+    let kh='<div class="dsec"><h3>Keyword Match</h3>';
+    if(m.length) kh+=`<div class="kwr"><div class="kwl m">Matched (${m.length})</div><div class="kws">${m.map(k=>`<span class="kp m">${esc(k)}</span>`).join('')}</div></div>`;
+    if(x.length) kh+=`<div class="kwr"><div class="kwl x">Missing (${x.length})</div><div class="kws">${x.map(k=>`<span class="kp x">${esc(k)}</span>`).join('')}</div></div>`;
+    kh+='</div>';
+    body+=kh;
+  }
+
+  document.getElementById('mbody').innerHTML=body;
+  document.getElementById('mabar').innerHTML=`
+    <button class="btn-sm bg"  onclick="setStatus(${a.id},'applied')">Applied</button>
+    <button class="btn-sm bp"  onclick="setStatus(${a.id},'interview')">Interview</button>
+    <button class="btn-sm br"  onclick="setStatus(${a.id},'rejected')">Rejected</button>
+    <button class="btn-sm bgh" onclick="setStatus(${a.id},'generated')">Reset</button>
+    <div style="flex:1"></div>
+    <button class="btn-sm br"  onclick="deleteApp(${a.id})">Delete</button>`;
+  document.getElementById('modal').classList.remove('hidden');
+}
+
+function closeModal(){document.getElementById('modal').classList.add('hidden')}
+
+async function setStatus(id, status){
+  try{
+    await fetch(`/api/status/${id}`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status})
+    });
+  }catch(e){ console.error('Status update failed:', e); }
+  closeModal();
+  await fetchData();
+}
+
+function deleteApp(id){
+  if(!confirm('Delete this application?'))return;
+  DATA.applications=DATA.applications.filter(a=>a.id!==id);
+  closeModal();
+  render();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  fetchData();
+  setInterval(fetchData, 30000);
+  document.getElementById('search').addEventListener('input',render);
+  document.getElementById('fstatus').addEventListener('change',render);
+});
+</script>
+</body>
+</html>

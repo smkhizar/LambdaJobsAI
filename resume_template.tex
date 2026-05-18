@@ -1,0 +1,67 @@
+% !TEX program = xelatex
+\documentclass[9pt,letterpaper]{extarticle}
+
+\usepackage[top=0.35in, bottom=0.3in, left=0.25in, right=0.25in]{geometry}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage[pdfborder={0 0 0}]{hyperref}
+\usepackage{xcolor}
+
+\renewcommand{\familydefault}{\rmdefault}
+\pagenumbering{gobble}
+
+\setlist[itemize]{leftmargin=11pt, labelsep=6pt}
+
+\begin{document}
+\vspace*{-10pt}
+
+\noindent
+{\LARGE \textbf{{{NAME}}}}\\[4pt]
+\footnotesize
+\href{mailto:{{EMAIL}}}{{{EMAIL}}}
+\textbullet\ {{PHONE}}
+\textbullet\ {{LOCATION}}
+\textbullet\ \href{https://{{LINKEDIN}}}{{{LINKEDIN}}}
+\textbullet\ \textit{\textbf{Authorized to work in the US without sponsorship}}\\[-4pt]
+\hrule
+\vspace{4pt}
+
+\noindent
+\textbf{Summary:} {{SUMMARY}}
+
+\vspace{5pt}
+\noindent
+\textbf{\large Experience}
+\vspace{1pt}
+\hrule
+\vspace{3pt}
+
+{{EXPERIENCE_SECTION}}
+
+\vspace{3pt}
+\noindent
+\textbf{\large Skills}
+\vspace{1pt}
+\hrule
+\vspace{3pt}
+
+\begin{itemize}[itemsep=0.85pt]
+
+{{SKILLS_SECTION}}
+
+\end{itemize}
+
+\vspace{3pt}
+\noindent
+\textbf{\large Education}
+\vspace{1pt}
+\hrule
+\vspace{3pt}
+
+\begin{itemize}[itemsep=2pt]
+
+{{EDUCATION_SECTION}}
+
+\end{itemize}
+
+\end{document}
