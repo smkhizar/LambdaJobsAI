@@ -80,8 +80,13 @@ Search, filter, change status, delete, view PDFs inline.
 ```
 .
 ├── AGENT.md                  # v3 rules for any AI agent (read this first)
+├── SCRAPING.md               # job-scraping toolkit for any agent (interpreter + version protocol)
+├── APPLY.md                  # live application-form assistant instructions
+├── SEARCH_TITLES.md          # scraping query priorities 1-5
 ├── bullet_bank.json          # tagged bullet pool (tailoring selects from this)
 ├── verify_ats.py             # deterministic post-build ATS verification (hard gate)
+├── scripts/scrapers/unified_job_scraper.py  # JobSpy sweep + filters + scan_history dedup
+├── data/portals.yml          # company watchlist (ATS APIs for zero-cost scans)
 ├── SKILLS.md                 # what the skill does + interface + batch recipe
 ├── RESUME.md                 # human-readable master resume
 ├── resume.json               # source-of-truth structured resume

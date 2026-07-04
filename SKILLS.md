@@ -70,6 +70,14 @@ python3 server.py                                         # dashboard at http://
    AGENT.md). Drop bad fits; backfill from fresh results to hit the requested count.
 3. Deliver a summary table (company, role, setup, salary, ATS %, resume path, caveats) + apply links.
 
+## Companion skills (same repo)
+- **Job scraping** — [SCRAPING.md](SCRAPING.md): tiered toolkit (JobSpy → ATS APIs → Scrapling →
+  CloakBrowser → Crawl4AI), the `/opt/homebrew/bin/python3.12` interpreter rule, version-check
+  protocol, `scripts/scrapers/unified_job_scraper.py`, `data/scan_history.tsv` dedup contract.
+- **Live apply-form assistant** — [APPLY.md](APPLY.md): reads a form in the browser, pre-scans
+  knock-out questions (work auth/sponsorship/degree/years), generates grounded copy-paste
+  answers from `output/{slug}/` context, persists them to `application_answers.md`.
+
 ## Guardrails
 - Truthfulness over coverage — never lie to hit 100%; leave real gaps in `missing_keywords`.
 - Always verify bullet **order** (generation models mis-order); assemble by bank `id` deterministically.

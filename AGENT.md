@@ -194,3 +194,10 @@ models frequently mis-order bullets.
 ## Master data (never modified by tailoring)
 `resume.json` (source of truth) · `bullet_bank.json` (tagged bullet pool — select from, never edit
 during tailoring) · `RESUME.md` (human-readable) · `master_resume.json` (extended).
+
+## Related instruction docs (read the one matching your task)
+- **Scraping / finding jobs** → [SCRAPING.md](SCRAPING.md) (toolkit, interpreter pitfall,
+  version-check protocol, ATS APIs, dedup contract) + [SEARCH_TITLES.md](SEARCH_TITLES.md)
+- **Filling an application form live** → [APPLY.md](APPLY.md) (knock-out pre-scan, truthful
+  answers table, ATS quirks; truthfulness boundary above applies to every answer)
+- **Interface / batch recipe** → [SKILLS.md](SKILLS.md)
