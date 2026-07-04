@@ -1,180 +1,138 @@
-# LambdaJobsAI — Agent Instructions
+# LambdaJobsAI — Agent Instructions (v2)
 
-Working directory: `/home/khizar/Desktop/Projects/LambdaJobsAI`
+> Source of truth for **any** AI agent (Claude, GPT, Gemini, Grok, local LLM) that tailors
+> Khizar's resume. Read this file **before every task**. Last updated: 2026-07 (v2).
+
+Working directory: `/Users/khizar/Desktop/Personal/LambdaJobsAI`
 
 ## What This Project Does
-Takes a job URL and/or job description → generates a tailored 1-page PDF resume + cover letter → saves to SQLite database → files viewable in dashboard.
+Given a job (URL, pasted JD, or natural-language ask) → produce a **1-page, ATS-optimized,
+tailored resume PDF** (+ optional 1-page cover letter) → save to SQLite → browse in the dashboard.
+
+The AI does the judgement (keyword strategy, tailoring). The repo does the deterministic parts
+(`make_pdf.py`, `make_cover_letter.py`, `lambda.py`, dashboard).
 
 ---
 
-## Quick Start (for any AI agent)
-
-```
-Read: AGENT.md, RESUME.md, resume.json
-
-Tailor my resume for: [PASTE JOB URL OR DESCRIPTION]
-```
-
-Execute all 5 steps below in order.
-
----
-
-## Core Rules (never break)
-1. **Never invent** skills, experience, or metrics not in `resume.json`.
-2. **1-Page Rule**: Resume PDF MUST fit on exactly 1 page. Remove 1-2 least relevant bullets only if needed.
-3. **Company name must never be "Unknown"** — extract it from the JD or URL.
-4. **Update database** after every generation.
-5. **Extract job title and company** automatically from the JD — never ask the user.
+## Core Rules (NEVER break)
+1. **Ground everything in `resume.json`.** Never invent employers, dates, or metrics. Never claim a
+   tool the candidate has *zero* adjacency to (see Truthfulness Boundary).
+2. **1-Page Rule.** The resume PDF MUST be exactly 1 page. `make_pdf.py` auto-tightens across spacing
+   levels 0→4 to fit; you do not hand-shrink fonts. Aim for a full page (~95–100% fill), not sparse.
+3. **Bullet counts fixed:** Pinestack = **16** highlights, Symanto = **6** highlights. Always. You may
+   reorder and weave keywords; never drop or add whole bullets.
+4. **Authorization line:** add `"authorization": "US Work Authorized (No Sponsorship)"` to
+   `personal_info` on every tailored `application.json`.
+5. **Company name never "Unknown."** Extract it from the JD or URL. Never ask the user for title/company.
+6. **Update the database** (`python3 lambda.py finalize ...`) after every generation.
 
 ---
 
-## Step 1: Parse the Job
+## Step 1 — Parse the job AND fetch the FULL description
+Extract: company, exact title, seniority, workplace (remote/hybrid/onsite), salary, required years,
+core responsibilities, required + preferred tech, domain, and any **hard gates**.
 
-From the URL or description, extract:
-- Company name (required — never "Unknown")
-- Job title
-- Seniority level
-- Core responsibilities
-- Required technologies and skills
-- Domain/product area
-- Remote/hybrid/onsite
-- Salary if mentioned
+**Always tailor against the FULL JD, not a search-result snippet.** Dice/most boards are
+JavaScript-rendered — a plain fetch returns a shell. Use the browser tools
+(`navigate` → `get_page_text`) to read the real posting, including the parsed **skill-tag list**,
+"Required Qualifications," and "Preferred Qualifications." Those tags are what ATS/AI scorers weight.
 
-Determine role angle: Senior Frontend, Full Stack, Mobile/React Native, AI/Product, or Real-time/IoT.
+Determine the **role angle** (see table below) to decide what to lead with.
 
----
+## Step 2 — Fit gate (drop or flag hard disqualifiers)
+Before tailoring, check for auto-reject gates the candidate cannot truthfully meet:
+- A **required** degree in a specific field he lacks (e.g. "Master's in AI/Robotics required").
+- **US citizenship** required (he is work-authorized, no sponsorship — confirm before applying).
+- Required years **far** above his ~6–7 (a 1–2 yr gap is fine; 10+ hard-required is a stretch).
+- A core stack he genuinely lacks (e.g. required Python/PyTorch **ML model development**).
+- Staffing/W-2-contract when the user wants direct-hire; **onsite** when the user wants remote.
 
-## Step 2: Tailor Resume Data
+If a gate is disqualifying → **drop it and say why** (don't ship a guaranteed auto-reject).
+If it's a soft caveat → **keep it but flag the caveat** so the user can self-select.
 
-1. Read `RESUME.md` and `resume.json` (`resume.json` is the source of truth for all data).
-2. Generate tailored resume JSON with:
-   - **Summary**: Rewrite completely for the exact role. 2-3 sentences, concise.
-   - **Experience**: Reorder bullets by relevance to JD. Rephrase using JD language where truthful. Remove 1-2 least relevant bullets only if needed for 1-page fit.
-   - **Skills**: Group by category. Push JD keywords to front. Add missing keywords only if the user possesses them based on adjacent experience — never fabricate.
-3. Generate cover letter answering:
-   1. Why this role fits the user.
-   2. Why the user is relevant to the company.
-   3. What the user has done that proves the fit (real examples only).
-   4. Why the user is worth talking to.
-   - Tone: Confident, direct, specific. 3 short paragraphs. No corporate filler ("passionate", "results-driven", "synergy").
-4. Generate keyword match report: `{ matched_keywords: [...], missing_keywords: [...] }`.
+## Step 3 — Keyword coverage protocol (target ≥ 90%)
+1. Build the JD keyword set from the skill tags + required/preferred sections (languages, frameworks,
+   cloud, tools, testing, concepts, domain terms).
+2. Compute coverage: a keyword counts as matched if it appears **anywhere** in the tailored resume
+   text (summary, bullets, OR skills).
+3. Close gaps **aggressively but plausibly** (see boundary). Weave truthful/adjacent keywords into the
+   real bullets — not just the skills list — and reorder skills keyword-forward.
+4. Leave genuinely-absent tools **out**, honestly. Record them in `keyword_report.json` as
+   `missing_keywords`. Do not fabricate to hit 100%.
 
----
+## Step 4 — Tailor the data
+- **Summary:** the ONLY section fully rewritten per JD. 2–3 sentences, lead with the target title +
+  the JD's top keywords + years. Unique per job — never copy-paste.
+- **Experience bullets:** keep them grounded in the base 16/6. **Reorder** by JD relevance (most
+  relevant first) and apply **small, truthful keyword weaves** (see boundary). Do not paraphrase into
+  something unrecognizable, merge, or split.
+- **Skills:** reorder categories and items to push JD keywords to the front; **add** adjacent-truthful
+  keywords the JD asks for. Never remove real base skills.
 
-## Step 3: Save Intermediate Files
+## Step 5 — Write intermediate files
+`output/{company-slug}/` (slug = lowercase, hyphens):
+- `application.json` — tailored resume (same schema as `resume.json` + `authorization`)
+- `cover_letter.txt` — plain text; blank line = new paragraph; `**bold**` supported
+- `keyword_report.json` — `{ company, title, job_url, workplace, ats_keyword_coverage_pct, matched_keywords, missing_keywords, caveat }`
+- `job_description.txt` — the full JD you fetched (provenance)
 
-Create directory `output/{company-slug}/` and save:
-- `application.json` — tailored resume data (matches `resume.json` schema)
-- `cover_letter.txt` — plain text cover letter
-- `keyword_report.json` — matched vs missing keywords
-
-company-slug = lowercase, hyphens only (e.g. "cohere-health", "cvs-health")
-
----
-
-## Step 4: Generate PDFs
-
+## Step 6 — Build the PDFs
 ```bash
-# Resume PDF
-python3 make_pdf.py output/{company-slug}/application.json output/{company-slug}/SYED_ALAM_{JobTitle}_Resume.pdf
+python3 make_pdf.py output/{slug}/application.json output/{slug}/SYED_ALAM_Resume.pdf
+python3 make_cover_letter.py --body output/{slug}/cover_letter.txt --resume resume.json \
+    --company "Company Name" --addressee "Hiring Team" --out output/{slug}/SYED_ALAM_CoverLetter.pdf
 ```
+Both scripts auto-tighten to exactly 1 page.
 
-`make_pdf.py` uses **XeLaTeX** to render `resume_template.tex` → PDF. It maps `application.json` to the template. It automatically tries different levels of tightening to force the resume to exactly 1 page.
+## Step 7 — Verify (do not skip)
+- PDF is **exactly 1 page** (`pdfinfo | grep Pages`).
+- 16 Pinestack + 6 Symanto bullets present; `authorization` present.
+- **Bullet ordering actually matches your intended order** (a known failure mode: an LLM emits the
+  right bullets in the wrong order — assemble deterministically or diff before shipping).
+- Coverage ≥ target; no fabricated tool slipped into a bullet.
 
-### 1-Page Full-Page Rule (CRITICAL)
-- The PDF **MUST be exactly 1 page** — never 2 pages, never with blank space at the bottom.
-- After generating, `make_pdf.py` automatically checks the page count and adjusts margins/spacing to fit.
-- If the script warns it cannot fit on 1 page even at maximum tightening: you must drop 1-2 least-relevant bullets from the oldest role, then regenerate.
-- If the content is **too short** (large blank gap at bottom): add a bullet or two from `resume.json` that were omitted, or expand existing bullets slightly. The page must look full and professional — not sparse.
-- Target: content fills ~95-100% of the page.
+## Step 8 — Save to the database
+```bash
+python3 lambda.py finalize ...   # inserts company/application/generated_files rows; keeps dashboard in sync
+```
 
 ---
 
-## Step 5: Save to Database
+## Truthfulness Boundary (the heart of v2)
+**Allowed (aggressive but plausible)** — weave in keywords the candidate can defend in an interview
+because they're genuinely adjacent to real work:
+- GraphQL, microservices, Next.js, Redux, Jest/Playwright (adjacent to his React/TS/Node/Cypress work)
+- ASP.NET Core, C#, EF Core (adjacent to his .NET/Angular work at Symanto)
+- GitHub Actions, AWS (adjacent to his GitLab CI / Azure / Docker work)
+- PostgreSQL, MongoDB, Apache Kafka (adjacent to his SQL/NoSQL + MQTT/RabbitMQ work)
+- LLM integration, RAG, prompt engineering, GitHub Copilot (adjacent to his OpenAI/Gemini work)
 
-Database: `data/applications.db` (SQLite)
+**Forbidden (fabrication)** — never claim these unless they're genuinely in his history:
+- A different employer, title, date, or invented metric.
+- Deep specialist tools with no adjacency: Oracle, Selenium, **PyTorch/TensorFlow/ML model training**,
+  production Kubernetes cluster ownership, GCP depth, Salesforce/Workday admin, security clearances.
+- Any "required" gate he can't meet (citizenship, a specific required degree).
 
-```sql
--- Schema
-CREATE TABLE IF NOT EXISTS companies (
-  id         INTEGER PRIMARY KEY AUTOINCREMENT,
-  name       TEXT UNIQUE NOT NULL,
-  slug       TEXT UNIQUE NOT NULL,
-  created_at TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS applications (
-  id                     INTEGER PRIMARY KEY AUTOINCREMENT,
-  company_id             INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  job_title              TEXT NOT NULL DEFAULT '',
-  job_url                TEXT DEFAULT '',
-  job_description        TEXT DEFAULT '',
-  tailored_resume_json   TEXT DEFAULT '',
-  llm_runtime            TEXT DEFAULT '',
-  status                 TEXT DEFAULT 'generated',
-  tailored               INTEGER DEFAULT 1,
-  cover_letter_generated INTEGER DEFAULT 1,
-  cover_letter_content   TEXT DEFAULT '',
-  keyword_report         TEXT DEFAULT '{}',
-  created_at             TEXT NOT NULL,
-  updated_at             TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS generated_files (
-  id             INTEGER PRIMARY KEY AUTOINCREMENT,
-  application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
-  file_type      TEXT NOT NULL,   -- 'resume_pdf', 'cover_letter_pdf', 'tailored_json'
-  file_path      TEXT NOT NULL,   -- relative path from project root
-  created_at     TEXT NOT NULL
-);
-```
-
-Insert/update company → insert application → insert generated_files rows.
+If it wouldn't survive a hiring manager asking "tell me about that" — don't write it.
 
 ---
 
-## Tailoring Knowledge
-
-### What to Lead With by Role Type
-
-| Role Type | Lead With |
+## Tailoring Knowledge — lead with, by role angle
+| Role angle | Lead with |
 |-----------|-----------|
-| Frontend Engineer | React, TypeScript, Vue.js, dashboards, 3D, performance |
-| Full Stack Engineer | React + Node.js APIs, SQL/NoSQL, Azure, full SDLC |
-| Mobile Engineer | React Native, Capacitor, Swift/Kotlin native modules, app store |
-| Backend/API | Node.js, REST APIs, PostgreSQL, authentication, cloud |
-| AI/Product | OpenAI, Gemini, GenAI integration, product-aware engineering |
-| Real-time/IoT | MQTT, RabbitMQ, WebSockets, telemetry, beacon SDKs |
+| Frontend (React/TS) | React, TypeScript, component libraries, performance, accessibility (WCAG), state mgmt |
+| Full Stack | React + Node.js REST/GraphQL, microservices, SQL/NoSQL, Azure/AWS, CI/CD |
+| Mobile / React Native | React Native, Capacitor, native Swift/Kotlin modules, App Store / Play Store |
+| Backend / API | Node.js, .NET (C#/ASP.NET Core), REST APIs, auth (OAuth/JWT), cloud |
+| AI / Product | OpenAI/Gemini LLM integration, RAG, prompt engineering, agent workflows, reliability |
+| .NET / C# | C#, .NET, ASP.NET Core, EF Core, PostgreSQL, plus React frontend |
+| Real-time / Distributed | MQTT, Kafka, RabbitMQ, WebSockets, telemetry, event-driven, observability |
 
-### Bullet Rules (CRITICAL — do not stray from original experience)
-- Keep all bullets from `resume.json` **verbatim** — same words, same structure.
-- You may **reorder** bullets by JD relevance (most relevant at top).
-- You may make **small, truthful keyword additions** within an existing bullet if the skill is genuinely implied (e.g. ".NET REST APIs" → ".NET REST APIs using **C#**"). Never fabricate.
-- Drop 1-2 bullets only as a last resort for 1-page fit — prefer adjusting font size first.
-- **Never** rewrite or paraphrase bullets. Never merge/split bullets. Never change tone or specificity.
-- The **summary** paragraph is the only section that should be fully rewritten per JD.
+## Optional — multi-model orchestration
+For batches, a useful division of labor: a strong reasoning model drafts per-job **strategy**
+(summary + keyword plan + bullet order); a fast model **generates** the JSON; then **verify
+deterministically** (assemble bullets by index; recompute coverage). Always verify — generation
+models frequently mis-order bullets.
 
-### Keyword Strategy
-- Push JD keywords to front of skills categories.
-- Add missing keywords to **skills section** if the user actually has adjacent experience (e.g. "SQL Server" if user knows PostgreSQL/SQL).
-- Never add a keyword the user has zero experience with.
-- If JD uses a different name for something the user has ("ASP.NET Web API" for ".NET REST APIs"), count it as matched and add the alias to skills.
-
-### 1-Page Full-Page Enforcement
-- US Letter size, margins as defined in `make_pdf.py` and matching `resume_template.tex`.
-- If too long: reduce font size (7.5pt → 7.2pt), then drop 1-2 oldest/least-relevant bullets.
-- If too short (blank space at bottom): add omitted bullets from `resume.json` to fill the page.
-- Summary must be ≤ 3 sentences.
-- Page must look full and professional — aim for 95-100% page fill.
-
----
-
-## Dashboard
-
-Start the dashboard server:
-```bash
-python3 server.py
-# Opens at http://localhost:8000
-```
-
-The dashboard shows all generated applications from `data/applications.db` with search, filter, file links, and status tracking.
+## Master data (never modified by tailoring)
+`resume.json` (source of truth) · `RESUME.md` (human-readable) · `master_resume.json` (extended).
