@@ -50,6 +50,18 @@ Only ever install `python-jobspy` from the speedyapply git repo. (A wrong-packag
 was found and removed from the system Python 3.9 site on 2026-07-04 — if `import jobspy`
 ever returns a Redis queue API, you're on the wrong interpreter or the trap is back.)
 
+## Source matrix (verified 2026-07-04)
+| Source | How | Status |
+|---|---|---|
+| Indeed | JobSpy (`site_name=["indeed"]`) | ✅ works, full JDs |
+| LinkedIn | JobSpy + guest JD API `https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{id}` (no login; gives full JD, posted-age, salary) | ✅ works |
+| Google Jobs | JobSpy (`site_name=["google"]` + `google_search_term`) | ⚠️ flaky — returned 0 rows on test; low loss: Google Jobs aggregates the same boards we already hit |
+| Dice | Dice MCP connector (`search_jobs`) in agent runtimes — no standalone script | ✅ works (min date filter = 1 day; filter to fresher by `postedDate` yourself) |
+| BuiltIn | `scripts/scrapers/builtin_scraper.py` — plain HTTP, server-rendered | ✅ works, no anti-bot; cards carry posted-age/salary/Remote+USA |
+| Wellfound | `scripts/scrapers/wellfound_scraper.py` — CloakBrowser **visible** mode (DataDome blocks plain HTTP, Scrapling, and headless). Listing URL: `wellfound.com/jobs?remote=true&role={slug}` (`/role/remote/...` variants 404) | ✅ works via visible browser window |
+| RemoteOK / WWR / HN Who's Hiring | public API / RSS / Algolia | ✅ works, thin volume |
+| Glassdoor / ZipRecruiter | via JobSpy | ❌ 403 since May 2026 |
+
 ## Tiered tool chain (cheapest first)
 1. **JobSpy** — one call sweeps Indeed + LinkedIn + Google Jobs. Primary breadth tool.
    Glassdoor/ZipRecruiter return 403 through it (since May 2026).
@@ -61,8 +73,9 @@ ever returns a Redis queue API, you're on the wrong interpreter or the trap is b
    career-ops `modes/scan.md` (github.com/santifer/career-ops).
 3. **Scrapling StealthyFetcher** — Indeed deep-queries beyond JobSpy. Camoufox fingerprint,
    0 blocks tested. `result.text` is EMPTY — use `result.html_content` / `result.css()`.
-4. **CloakBrowser** — Glassdoor + hard sites. `headless=False`, `humanize=True`;
-   `new_page()` takes no arguments.
+4. **CloakBrowser** — Glassdoor, Wellfound + hard sites. **0.4.x API**: no class —
+   `import cloakbrowser; browser = cloakbrowser.launch(headless=False); page = browser.new_page()`
+   (standard Playwright Browser back). Use `headless=False` for DataDome sites.
 5. **Crawl4AI** — general anti-bot sites. **Never Indeed** (403 after 1-2 queries; same for Crawlee).
 6. **browser-use** — AI-driven navigation for login flows / weird SPAs. Not currently
    installed; install on demand: `/opt/homebrew/bin/python3.12 -m pip install --user --break-system-packages browser-use`.
@@ -70,14 +83,29 @@ ever returns a Redis queue API, you're on the wrong interpreter or the trap is b
 Discipline: if a cheaper tier already covered a company/board this run, do NOT re-scrape it
 with a more expensive tier.
 
-## The unified script
+## The scripts (all share the same filters + scan_history dedup)
 ```bash
+# Indeed + LinkedIn + Google (JobSpy sweep over SEARCH_TITLES.md priorities)
 /opt/homebrew/bin/python3.12 scripts/scrapers/unified_job_scraper.py --hours 24 --per-query 25
+
+# BuiltIn (plain HTTP; cards have posted-age so tight windows work)
+/opt/homebrew/bin/python3.12 scripts/scrapers/builtin_scraper.py --search react --pages 3 --max-age-hours 24
+
+# Wellfound (OPENS A VISIBLE BROWSER WINDOW — DataDome; never headless)
+/opt/homebrew/bin/python3.12 scripts/scrapers/wellfound_scraper.py --roles software-engineer,frontend-engineer --max-age-days 2
 ```
-JobSpy sweep over [SEARCH_TITLES.md](SEARCH_TITLES.md) priorities → staffing blacklist +
-title filter → cross-run dedup → writes `data/scraped_jobs/jobs_*.json` + appends every
-seen job to `data/scan_history.tsv` with a status
-(`added|skipped_title|skipped_dup|skipped_staffing|skipped_stale|skipped_expired|skipped_location`).
+All write `data/scraped_jobs/*.json` + append every seen job to `data/scan_history.tsv` with a
+status (`added|skipped_title|skipped_dup|skipped_staffing|skipped_stale|skipped_expired|skipped_location`).
+Dice has no script — use the Dice MCP connector in agent runtimes.
+
+## LinkedIn full-JD guest API (no login, no browser)
+```bash
+curl -A "Mozilla/5.0" "https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}"
+```
+`job_id` = digits in `linkedin.com/jobs/view/{id}`. Returns HTML with the FULL description,
+`posted-time-ago__text` (exact freshness), location, and salary when present. This fixes the
+"LinkedIn gives no description via JobSpy" gap — fetch before triage/tailoring. ~17 parallel
+requests tested fine; keep bursts modest.
 
 ## Dedup contract (all agents must honor)
 Before creating any triage task / tailoring anything, check all three:

@@ -63,9 +63,14 @@ python3 server.py                                         # dashboard at http://
 ```
 
 ## Batch recipe ("find fresh jobs + tailor")
-1. Search a jobs source (e.g. Dice connector) for the candidate's angles, filtered to the requested
-   freshness (e.g. posted ≤ 24h) and workplace (e.g. remote), excluding already-applied companies
-   under `output/`.
+1. Sweep the sources per [SCRAPING.md](SCRAPING.md)'s source matrix, filtered to the requested
+   freshness and workplace, excluding already-applied companies (`output/` + `data/scan_history.tsv`):
+   - `unified_job_scraper.py` (Indeed + LinkedIn + Google via JobSpy)
+   - `builtin_scraper.py` (BuiltIn, plain HTTP, has posted-age)
+   - Dice MCP connector (`search_jobs`, agent runtimes)
+   - ATS APIs for watchlist companies (`data/portals.yml`) · RemoteOK/WWR/HN for extra coverage
+   - Wellfound only via CloakBrowser visible mode (DataDome)
+   For LinkedIn hits, fetch full JDs via the guest API (see AGENT.md Step 1) before triage.
 2. For each shortlisted job: **fetch the full JD**, run the **fit gate**, then tailor (Steps 3–8 of
    AGENT.md). Drop bad fits; backfill from fresh results to hit the requested count.
 3. Deliver a summary table (company, role, setup, salary, ATS %, resume path, caveats) + apply links.

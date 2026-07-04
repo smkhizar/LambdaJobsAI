@@ -141,6 +141,8 @@ def run_scrape(hours_old: int, per_query: int, max_priority: int) -> list[dict]:
             df = scrape_jobs(
                 site_name=["indeed", "linkedin", "google"],
                 search_term=query,
+                # Google Jobs needs its own literal query; flaky (often 0 rows) but free to try
+                google_search_term=f"{query} remote jobs USA posted today",
                 location="Remote",
                 results_wanted=per_query,
                 hours_old=hours_old,
@@ -157,7 +159,7 @@ def run_scrape(hours_old: int, per_query: int, max_priority: int) -> list[dict]:
                     "company": str(row.get("company") or ""),
                     "location": str(row.get("location") or ""),
                     "url": str(row.get("job_url") or ""),
-                    "description": str(row.get("description") or ""),
+                    "description": "" if row.get("description") is None or str(row.get("description")) == "nan" else str(row.get("description")),
                     "salary_min": row.get("min_amount"),
                     "salary_max": row.get("max_amount"),
                     "date_posted": str(row.get("date_posted") or ""),
@@ -192,9 +194,12 @@ def main() -> None:
             "url": url, "first_seen": stamp, "source": job["source"],
             "title": title, "company": company, "location": job["location"],
         }
-        if not title or not company or len(job["description"]) < 50:
+        if not title or not company or title == "nan" or company == "nan":
             counts["invalid"] += 1
             continue  # not even worth recording
+        # LinkedIn/Google often omit the description — keep the job, flag that the
+        # full JD must be fetched before tailoring (AGENT.md Step 1 requires it anyway).
+        job["needs_jd_fetch"] = len(job["description"]) < 50
         key = dedup_key(title, company)
         if url in seen_urls or key in seen_keys or key in batch_keys:
             counts["dup"] += 1

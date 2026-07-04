@@ -85,7 +85,9 @@ Search, filter, change status, delete, view PDFs inline.
 ├── SEARCH_TITLES.md          # scraping query priorities 1-5
 ├── bullet_bank.json          # tagged bullet pool (tailoring selects from this)
 ├── verify_ats.py             # deterministic post-build ATS verification (hard gate)
-├── scripts/scrapers/unified_job_scraper.py  # JobSpy sweep + filters + scan_history dedup
+├── scripts/scrapers/unified_job_scraper.py  # Indeed+LinkedIn+Google (JobSpy) + filters + dedup
+├── scripts/scrapers/builtin_scraper.py      # BuiltIn (plain HTTP, posted-age on cards)
+├── scripts/scrapers/wellfound_scraper.py    # Wellfound (CloakBrowser visible — DataDome)
 ├── data/portals.yml          # company watchlist (ATS APIs for zero-cost scans)
 ├── SKILLS.md                 # what the skill does + interface + batch recipe
 ├── RESUME.md                 # human-readable master resume

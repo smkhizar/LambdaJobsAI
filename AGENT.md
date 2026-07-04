@@ -46,6 +46,11 @@ JavaScript-rendered — a plain fetch returns a shell. Use the browser tools
 (`navigate` → `get_page_text`) to read the real posting, including the parsed **skill-tag list**,
 "Required Qualifications," and "Preferred Qualifications." Those tags are what ATS/AI scorers weight.
 
+**LinkedIn shortcut (no browser, no login):** the guest API returns the full JD as HTML —
+`curl -A "Mozilla/5.0" https://www.linkedin.com/jobs-guest/jobs/api/jobPosting/{job_id}`
+(job_id = digits in the `/jobs/view/{id}` URL). Includes description, posted-age, location,
+salary when present. Verified working 2026-07-04. Strip tags → full JD text.
+
 Determine the **role angle** (see table below) to decide what to lead with.
 
 ## Step 2 — Fit gate (drop or flag hard disqualifiers)
