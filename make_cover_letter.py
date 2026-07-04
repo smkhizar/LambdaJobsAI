@@ -118,7 +118,7 @@ def compile_tex(tex: str, output_pdf: Path) -> int:
     if produced != output_pdf:
         produced.replace(output_pdf)
 
-    for ext in (".tex", ".log", ".aux", ".out"):
+    for ext in (".tex", ".log", ".aux", ".out", ".synctex.gz", ".fdb_latexmk", ".fls", ".bbl", ".blg"):
         p = base.with_suffix(ext)
         if p.exists():
             try:

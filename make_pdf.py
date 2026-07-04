@@ -153,9 +153,9 @@ def compile_tex(tex_content: str, output_pdf_path: str):
     )
     # Run twice for references if needed, though usually not for simple resumes
     
-    # Cleanup temp files
+    # Cleanup ALL temp files (including leftovers from earlier attempts)
     base = os.path.join(work_dir, "resume")
-    for ext in [".tex", ".log", ".aux", ".out"]:
+    for ext in [".tex", ".log", ".aux", ".out", ".synctex.gz", ".fdb_latexmk", ".fls", ".bbl", ".blg"]:
         try:
             if os.path.exists(base + ext):
                 os.remove(base + ext)
