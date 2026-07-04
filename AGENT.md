@@ -1,7 +1,11 @@
-# LambdaJobsAI — Agent Instructions (v2)
+# LambdaJobsAI — Agent Instructions (v3)
 
 > Source of truth for **any** AI agent (Claude, GPT, Gemini, Grok, local LLM) that tailors
-> Khizar's resume. Read this file **before every task**. Last updated: 2026-07 (v2).
+> Khizar's resume. Read this file **before every task**. Last updated: 2026-07-04 (v3).
+>
+> **v3 changes:** bullet bank selection (`bullet_bank.json`), impact-first rewrite policy,
+> AI-screener rules (semantic match, not keyword stuffing), exact-token mirroring,
+> title mirroring, and mandatory deterministic verification (`verify_ats.py`).
 
 Working directory: `/Users/khizar/Desktop/Personal/LambdaJobsAI`
 
@@ -15,16 +19,21 @@ The AI does the judgement (keyword strategy, tailoring). The repo does the deter
 ---
 
 ## Core Rules (NEVER break)
-1. **Ground everything in `resume.json`.** Never invent employers, dates, or metrics. Never claim a
-   tool the candidate has *zero* adjacency to (see Truthfulness Boundary).
+1. **Ground everything in `resume.json` / `bullet_bank.json`.** Never invent employers, dates, or
+   metrics. Never claim a tool the candidate has *zero* adjacency to (see Truthfulness Boundary).
 2. **1-Page Rule.** The resume PDF MUST be exactly 1 page. `make_pdf.py` auto-tightens across spacing
    levels 0→4 to fit; you do not hand-shrink fonts. Aim for a full page (~95–100% fill), not sparse.
-3. **Bullet counts fixed:** Pinestack = **16** highlights, Symanto = **6** highlights. Always. You may
-   reorder and weave keywords; never drop or add whole bullets.
-4. **Authorization line:** add `"authorization": "US Work Authorized (No Sponsorship)"` to
+3. **Bullet counts fixed:** Pinestack = **16** highlights, Symanto = **6** highlights. Always.
+   Select them from `bullet_bank.json` (the bank is larger than the count — that's the tailoring
+   headroom). `always_include` bullets must be present; their anchors must survive any rewrite.
+4. **Core anchors always survive** — React, React Native, Vue, TypeScript, Node.js, Swift, Kotlin,
+   .NET must each appear somewhere in the final resume (bullets preferred, skills at minimum),
+   even when the JD asks for none of them. `verify_ats.py` enforces this.
+5. **Authorization line:** add `"authorization": "US Work Authorized (No Sponsorship)"` to
    `personal_info` on every tailored `application.json`.
-5. **Company name never "Unknown."** Extract it from the JD or URL. Never ask the user for title/company.
-6. **Update the database** (`python3 lambda.py finalize ...`) after every generation.
+6. **Company name never "Unknown."** Extract it from the JD or URL. Never ask the user for title/company.
+7. **Run `python3 verify_ats.py output/{slug}/application.json` after every build.** Ship only on PASS.
+8. **Update the database** (`python3 lambda.py finalize ...`) after every generation.
 
 ---
 
@@ -50,24 +59,67 @@ Before tailoring, check for auto-reject gates the candidate cannot truthfully me
 If a gate is disqualifying → **drop it and say why** (don't ship a guaranteed auto-reject).
 If it's a soft caveat → **keep it but flag the caveat** so the user can self-select.
 
-## Step 3 — Keyword coverage protocol (target ≥ 90%)
+## Step 3 — Keyword coverage protocol (target ≥ 90%, two scorers)
+Modern portals run **two filters**: a literal keyword matcher (classic ATS) AND an AI/semantic
+scorer (Workday, Greenhouse, LinkedIn Recruiter, Ashby, hireEZ). Optimize for both:
+
+**Literal matcher:**
 1. Build the JD keyword set from the skill tags + required/preferred sections (languages, frameworks,
    cloud, tools, testing, concepts, domain terms).
-2. Compute coverage: a keyword counts as matched if it appears **anywhere** in the tailored resume
-   text (summary, bullets, OR skills).
-3. Close gaps **aggressively but plausibly** (see boundary). Weave truthful/adjacent keywords into the
-   real bullets — not just the skills list — and reorder skills keyword-forward.
+2. **Exact-token mirroring:** use the JD's exact spelling at least once — if the JD says "React.js",
+   write "React.js" (skills can list `React (React.js)`); "Node" vs "Node.js"; "CI/CD" vs
+   "continuous integration"; "RESTful APIs" vs "REST APIs". Literal matchers don't normalize.
+3. Coverage: a keyword counts as matched if it appears **anywhere** in the tailored resume text
+   (summary, bullets, OR skills) — but keywords in **bullets with evidence** score higher with AI
+   screeners than bare skills-list mentions. Prefer weaving into bullets.
 4. Leave genuinely-absent tools **out**, honestly. Record them in `keyword_report.json` as
    `missing_keywords`. Do not fabricate to hit 100%.
 
+**AI/semantic scorer (do NOT keyword-stuff):**
+- Every keyword must sit inside a sentence that shows **what was done with it and the outcome**.
+  A bullet that is a comma-list of tools reads as stuffing and scores WORSE with LLM screeners.
+- Keep numbers: scale (5,000+ DAU), multi-customer deployments, store releases, years. AI scorers
+  weight quantified evidence heavily.
+- **Title mirroring:** the summary's first phrase mirrors the JD title truthfully (e.g. JD
+  "Senior Frontend Engineer" → "Senior Frontend Engineer with 6+ years…"). His real employment
+  titles never change.
+- No keyword may appear more than ~3 times across the resume; repetition past that is a
+  stuffing signal.
+
 ## Step 4 — Tailor the data
-- **Summary:** the ONLY section fully rewritten per JD. 2–3 sentences, lead with the target title +
-  the JD's top keywords + years. Unique per job — never copy-paste.
-- **Experience bullets:** keep them grounded in the base 16/6. **Reorder** by JD relevance (most
-  relevant first) and apply **small, truthful keyword weaves** (see boundary). Do not paraphrase into
-  something unrecognizable, merge, or split.
+- **Summary:** fully rewritten per JD. 2–3 sentences: mirrored target title + years + top 3–5 JD
+  keywords + one quantified proof point. Unique per job — never copy-paste.
+- **Experience bullets — select, order, rewrite (see protocol below).**
 - **Skills:** reorder categories and items to push JD keywords to the front; **add** adjacent-truthful
-  keywords the JD asks for. Never remove real base skills.
+  keywords the JD asks for (exact JD token form). Never remove core anchors.
+
+### Bullet selection (from `bullet_bank.json`)
+1. Take all `always_include` bullets (they carry the core anchors: React/RN/Vue cross-platform,
+   Kotlin/Swift native modules, Node.js APIs, TypeScript, Azure scale, .NET+Angular).
+2. Fill the remaining slots to exactly 16 (Pinestack) / 6 (Symanto) by **tag relevance to the JD**
+   (bank bullets are tagged: frontend, mobile, backend, realtime, ai, devops, testing, data,
+   leadership, …).
+3. Bullets left out of this job stay in the bank — nothing is ever deleted from the bank.
+
+### Bullet ordering (what the human recruiter skims)
+- **Top-3 rule:** the first 3 Pinestack bullets must each name a JD-primary technology; a recruiter
+  decides in the top 3. The first bullet is never a generic/process bullet.
+- Order: Tier A = JD-primary stack + the 5,000+ DAU scale bullet (top 4) → Tier B = JD-secondary
+  stack → Tier C = quality/process (testing, accessibility, observability, leadership) → Tier D =
+  off-angle tech (kept for anchors, placed last).
+- **Verify the order deterministically** — assemble bullets by bank `id` in your planned sequence;
+  don't trust a generation model to emit order correctly.
+
+### Bullet rewrite policy (v3 — modify allowed, fabrication not)
+You may **rewrite** any selected bullet to fit the role angle, under these constraints:
+- Same underlying fact: same project, same employer, same real work. Reframe emphasis, don't
+  invent new events or metrics.
+- Impact-first shape: *strong verb + what + tech + outcome/scale* ("Accomplished X, using Y,
+  achieving Z"). Lead with the part of the fact the JD cares about.
+- The bullet's `anchors` from the bank must survive the rewrite verbatim (e.g. the native-modules
+  bullet always keeps **Kotlin** and **Swift**).
+- No merging two bank bullets into one, no splitting one into two (breaks the count + audit trail).
+- The interview test still applies: he must be able to talk about the rewritten bullet for 2 minutes.
 
 ## Step 5 — Write intermediate files
 `output/{company-slug}/` (slug = lowercase, hyphens):
@@ -84,12 +136,17 @@ python3 make_cover_letter.py --body output/{slug}/cover_letter.txt --resume resu
 ```
 Both scripts auto-tighten to exactly 1 page.
 
-## Step 7 — Verify (do not skip)
-- PDF is **exactly 1 page** (`pdfinfo | grep Pages`).
-- 16 Pinestack + 6 Symanto bullets present; `authorization` present.
-- **Bullet ordering actually matches your intended order** (a known failure mode: an LLM emits the
-  right bullets in the wrong order — assemble deterministically or diff before shipping).
-- Coverage ≥ target; no fabricated tool slipped into a bullet.
+## Step 7 — Verify (do not skip; deterministic, not vibes)
+```bash
+python3 verify_ats.py output/{slug}/application.json
+```
+This extracts the **actual PDF text** (what an ATS parser sees) and checks: exactly 1 page;
+16+6 bullet counts; `authorization` present; all core anchors extractable from the PDF;
+every keyword claimed in `keyword_report.json` really present in the PDF text (catches
+ligature/encoding corruption and hallucinated coverage); `always_include` bullet anchors intact.
+**Ship only on PASS.** Additionally eyeball:
+- Bullet ordering matches your intended tier order.
+- No fabricated tool slipped into a bullet; keyword_report `missing_keywords` is honest.
 
 ## Step 8 — Save to the database
 ```bash
@@ -135,4 +192,5 @@ deterministically** (assemble bullets by index; recompute coverage). Always veri
 models frequently mis-order bullets.
 
 ## Master data (never modified by tailoring)
-`resume.json` (source of truth) · `RESUME.md` (human-readable) · `master_resume.json` (extended).
+`resume.json` (source of truth) · `bullet_bank.json` (tagged bullet pool — select from, never edit
+during tailoring) · `RESUME.md` (human-readable) · `master_resume.json` (extended).

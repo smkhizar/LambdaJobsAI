@@ -30,23 +30,32 @@ localhost dashboard.
 | `keyword_report.json` | company, title, url, ATS coverage %, matched + missing keywords, caveat |
 | `job_description.txt` | the full JD that was fetched (provenance) |
 
-## Core capabilities (v2)
+## Core capabilities (v3)
 1. **Full-JD retrieval** — fetches the real posting via browser (`navigate` → `get_page_text`) because
    job boards are JS-rendered; snippets aren't enough for ATS.
 2. **Fit gate** — drops guaranteed auto-rejects (required degree/citizenship/ML-specialist the
    candidate lacks) and flags soft caveats (hybrid, W-2 contract, 8+ yrs).
-3. **Keyword coverage** — targets ≥ 90% of the JD's keyword set; reports matched vs missing.
-4. **Aggressive-but-plausible tailoring** — weaves truthful/adjacent keywords into real bullets;
-   never fabricates employers, dates, metrics, or tools with zero adjacency (see AGENT.md boundary).
-5. **Deterministic 1-page build** — `make_pdf.py` / `make_cover_letter.py` auto-tighten to exactly 1 page.
-6. **Verification** — confirms 1 page, 16+6 bullets, correct bullet ordering, coverage, no fabrication.
-7. **Bookkeeping** — `lambda.py finalize` writes to `data/applications.db`; dashboard stays in sync.
+3. **Dual-scorer keyword coverage** — targets ≥ 90% for literal ATS matchers (exact JD token
+   spelling) AND reads naturally for AI/semantic screeners (evidence + outcome per keyword,
+   no stuffing, ≤3 repeats per keyword, title mirroring in the summary).
+4. **Bullet bank tailoring** — selects 16+6 bullets from tagged `bullet_bank.json`, orders by
+   tier (top-3 rule: JD-primary tech first), and rewrites bullets impact-first while preserving
+   each bullet's tech anchors. Core anchors (React, React Native, Vue, TypeScript, Node.js,
+   Swift, Kotlin, .NET) always survive.
+5. **Aggressive-but-plausible weaving** — truthful/adjacent keywords only; never fabricates
+   employers, dates, metrics, or tools with zero adjacency (see AGENT.md boundary).
+6. **Deterministic 1-page build** — `make_pdf.py` / `make_cover_letter.py` auto-tighten to exactly 1 page.
+7. **Deterministic verification** — `verify_ats.py` extracts the real PDF text and proves: 1 page,
+   16+6 bullets, authorization line, core anchors extractable, every claimed keyword actually in
+   the PDF (catches ligature corruption + hallucinated coverage). Ship only on PASS.
+8. **Bookkeeping** — `lambda.py finalize` writes to `data/applications.db`; dashboard stays in sync.
 
 ## Commands
 ```bash
 python3 lambda.py check                                   # verify xelatex, pdfinfo, python
 python3 lambda.py init                                    # create data/ + output/, apply schema
 python3 make_pdf.py output/{slug}/application.json output/{slug}/SYED_ALAM_Resume.pdf
+python3 verify_ats.py output/{slug}/application.json           # MUST pass before shipping
 python3 make_cover_letter.py --body output/{slug}/cover_letter.txt --resume resume.json \
     --company "Company" --addressee "Hiring Team" --out output/{slug}/SYED_ALAM_CoverLetter.pdf
 python3 lambda.py finalize ...                            # build PDFs + insert DB rows
@@ -63,5 +72,7 @@ python3 server.py                                         # dashboard at http://
 
 ## Guardrails
 - Truthfulness over coverage — never lie to hit 100%; leave real gaps in `missing_keywords`.
-- Always verify bullet **order** (generation models mis-order); prefer deterministic assembly.
+- Always verify bullet **order** (generation models mis-order); assemble by bank `id` deterministically.
+- `verify_ats.py` PASS is a hard gate — no resume ships on FAIL.
+- Core anchors (React, React Native, Vue, TypeScript, Node.js, Swift, Kotlin, .NET) never dropped.
 - Resume is always exactly 1 page and full (~95–100%).

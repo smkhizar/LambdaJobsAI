@@ -13,15 +13,20 @@ This repo provides the deterministic pieces around the AI:
 - `server.py` + `dashboard.html` — localhost dashboard at `http://localhost:8000`
 - `resume.json` / `RESUME.md` / `master_resume.json` — the master profile (never modified by tailoring)
 
-## How v2 tailoring works (the short version)
+## How v3 tailoring works (the short version)
 1. **Fetch the full JD** (browser, since job boards are JS-rendered) — not just a search snippet.
 2. **Fit gate** — drop guaranteed auto-rejects (required degree/citizenship/ML the candidate lacks);
    flag soft caveats (hybrid, contract, high years).
-3. **Keyword coverage** — target ≥ 90% of the JD's keyword set; report matched vs missing.
-4. **Aggressive-but-plausible** — weave truthful/adjacent keywords into the real bullets; never
+3. **Dual-scorer keyword coverage** — ≥ 90% for literal ATS matchers (exact JD token spelling)
+   AND natural evidence-based prose for AI/semantic screeners (no stuffing, title mirroring).
+4. **Bullet bank** — select 16 Pinestack + 6 Symanto bullets from tagged `bullet_bank.json`,
+   order by JD relevance (top-3 rule), rewrite impact-first; core anchors (React, React Native,
+   Vue, TypeScript, Node.js, Swift, Kotlin, .NET) always survive.
+5. **Aggressive-but-plausible** — weave truthful/adjacent keywords into the real bullets; never
    fabricate employers, dates, metrics, or tools with zero adjacency.
-5. **1 page, always** — 16 Pinestack + 6 Symanto bullets, auto-fit; add `authorization` line.
-6. **Verify** (1 page, bullet counts, correct order, coverage) → **finalize** (DB + dashboard).
+6. **1 page, always** — auto-fit; add `authorization` line.
+7. **Verify deterministically** — `python3 verify_ats.py output/{slug}/application.json` extracts
+   the real PDF text and gates shipping → **finalize** (DB + dashboard).
 
 See [AGENT.md](AGENT.md) for the full protocol and the truthfulness boundary.
 
@@ -74,7 +79,9 @@ Search, filter, change status, delete, view PDFs inline.
 
 ```
 .
-├── AGENT.md                  # v2 rules for any AI agent (read this first)
+├── AGENT.md                  # v3 rules for any AI agent (read this first)
+├── bullet_bank.json          # tagged bullet pool (tailoring selects from this)
+├── verify_ats.py             # deterministic post-build ATS verification (hard gate)
 ├── SKILLS.md                 # what the skill does + interface + batch recipe
 ├── RESUME.md                 # human-readable master resume
 ├── resume.json               # source-of-truth structured resume
