@@ -110,6 +110,13 @@ with a more expensive tier.
 /opt/homebrew/bin/python3.12 scripts/scrapers/ats_scraper.py --max-age-days 7
 # ...or ad-hoc boards without touching the watchlist:
 /opt/homebrew/bin/python3.12 scripts/scrapers/ats_scraper.py --adhoc greenhouse:postman,lever:stripe
+
+# Greenhouse-WIDE search — no company names needed:
+# discovery mines every boards.greenhouse.io/{slug} URL from the Common Crawl index
+# (4,018 companies found on first run, cached in data/greenhouse_companies.json);
+# sweep rotates through the cache incrementally, full JDs for matches
+/opt/homebrew/bin/python3.12 scripts/scrapers/greenhouse_discover.py --discover          # rerun ~monthly
+/opt/homebrew/bin/python3.12 scripts/scrapers/greenhouse_discover.py --sweep 300 --max-age-days 3
 ```
 All write `data/scraped_jobs/*.json` + append every seen job to `data/scan_history.tsv` with a
 status (`added|skipped_title|skipped_dup|skipped_staffing|skipped_stale|skipped_expired|skipped_location`).
