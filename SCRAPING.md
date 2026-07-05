@@ -103,8 +103,13 @@ with a more expensive tier.
 # BuiltIn (plain HTTP; cards have posted-age so tight windows work)
 /opt/homebrew/bin/python3.12 scripts/scrapers/builtin_scraper.py --search react --pages 3 --max-age-hours 24
 
-# Wellfound (OPENS A VISIBLE BROWSER WINDOW — DataDome; never headless)
+# Wellfound (OPENS A VISIBLE BROWSER WINDOW — DataDome; never headless; DISCOVERY-ONLY)
 /opt/homebrew/bin/python3.12 scripts/scrapers/wellfound_scraper.py --roles software-engineer,frontend-engineer --max-age-days 2
+
+# ATS APIs (zero-token, full JDs, no anti-bot) — pulls data/portals.yml watchlist
+/opt/homebrew/bin/python3.12 scripts/scrapers/ats_scraper.py --max-age-days 7
+# ...or ad-hoc boards without touching the watchlist:
+/opt/homebrew/bin/python3.12 scripts/scrapers/ats_scraper.py --adhoc greenhouse:postman,lever:stripe
 ```
 All write `data/scraped_jobs/*.json` + append every seen job to `data/scan_history.tsv` with a
 status (`added|skipped_title|skipped_dup|skipped_staffing|skipped_stale|skipped_expired|skipped_location`).
