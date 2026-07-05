@@ -69,7 +69,8 @@ python3 server.py                                         # dashboard at http://
    - `builtin_scraper.py` (BuiltIn, plain HTTP, has posted-age)
    - Dice MCP connector (`search_jobs`, agent runtimes)
    - ATS APIs for watchlist companies (`data/portals.yml`) · RemoteOK/WWR/HN for extra coverage
-   - Wellfound only via CloakBrowser visible mode (DataDome)
+   - Wellfound only via CloakBrowser visible mode (DataDome) — **discovery only: re-locate every
+     Wellfound hit on its origin ATS/careers page and apply there; not found elsewhere → skip**
    For LinkedIn hits, fetch full JDs via the guest API (see AGENT.md Step 1) before triage.
 2. For each shortlisted job: **fetch the full JD**, run the **fit gate**, then tailor (Steps 3–8 of
    AGENT.md). Drop bad fits; backfill from fresh results to hit the requested count.

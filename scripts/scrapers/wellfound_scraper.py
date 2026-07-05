@@ -4,6 +4,12 @@ Wellfound (AngelList Talent) job scraper — DataDome-protected, so this uses
 CloakBrowser in VISIBLE mode (a real browser window opens on screen; do not run
 headless — DataDome blocks it, as does plain HTTP and Scrapling).
 
+RULE: Wellfound is DISCOVERY-ONLY. Never apply on Wellfound — its apply flow attaches
+one profile CV to every application, so tailored resumes can't be used. For each hit,
+find the same posting on the company's ATS (Greenhouse/Lever/Ashby/Workday), careers
+page, LinkedIn, or Indeed and apply there; if it exists nowhere else, skip the job.
+See SCRAPING.md → "Wellfound is discovery-only".
+
 Listing URL that works (verified 2026-07-04): https://wellfound.com/jobs?remote=true&role={slug}
 Cards carry: title, company, "Remote • City", salary range, posted-age ("today",
 "yesterday", "N days ago").

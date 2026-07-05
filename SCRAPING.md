@@ -58,7 +58,19 @@ ever returns a Redis queue API, you're on the wrong interpreter or the trap is b
 | Google Jobs | JobSpy (`site_name=["google"]` + `google_search_term`) | ⚠️ flaky — returned 0 rows on test; low loss: Google Jobs aggregates the same boards we already hit |
 | Dice | Dice MCP connector (`search_jobs`) in agent runtimes — no standalone script | ✅ works (min date filter = 1 day; filter to fresher by `postedDate` yourself) |
 | BuiltIn | `scripts/scrapers/builtin_scraper.py` — plain HTTP, server-rendered | ✅ works, no anti-bot; cards carry posted-age/salary/Remote+USA |
-| Wellfound | `scripts/scrapers/wellfound_scraper.py` — CloakBrowser **visible** mode (DataDome blocks plain HTTP, Scrapling, and headless). Listing URL: `wellfound.com/jobs?remote=true&role={slug}` (`/role/remote/...` variants 404) | ✅ works via visible browser window |
+| Wellfound | `scripts/scrapers/wellfound_scraper.py` — CloakBrowser **visible** mode (DataDome blocks plain HTTP, Scrapling, and headless). Listing URL: `wellfound.com/jobs?remote=true&role={slug}` (`/role/remote/...` variants 404). **DISCOVERY ONLY — never apply on Wellfound** (see rule below) | ✅ works via visible browser window |
+
+### RULE: Wellfound is discovery-only — always apply at the origin
+Wellfound applications attach ONE profile CV for every job (no per-application resume upload),
+which defeats tailored resumes. So for every Wellfound hit:
+1. Find the SAME posting at its origin: company careers page or ATS (try the Greenhouse API
+   first: `boards-api.greenhouse.io/v1/boards/{company}/jobs`, then Lever/Ashby/Workday
+   patterns above), or LinkedIn/Indeed.
+2. Apply THERE with the tailored PDF. Record the origin URL (not the Wellfound URL) in the
+   tracker and keyword_report.
+3. If the posting cannot be found anywhere outside Wellfound → **skip the job entirely.**
+(Verified example 2026-07-04: Postman "Senior Forward Deployed Engineer" on Wellfound =
+`job-boards.greenhouse.io/postman/jobs/6672559003` on Greenhouse.)
 | RemoteOK / WWR / HN Who's Hiring | public API / RSS / Algolia | ✅ works, thin volume |
 | Glassdoor / ZipRecruiter | via JobSpy | ❌ 403 since May 2026 |
 

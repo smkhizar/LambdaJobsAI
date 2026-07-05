@@ -19,6 +19,14 @@
 9. PERSIST    → Save answers to output/{slug}/application_answers.md; update tracker
 ```
 
+## Step 0 — Never apply on Wellfound (or any single-profile-CV board)
+Wellfound attaches ONE profile CV to every application — the tailored resume can't be used.
+If the form on screen is Wellfound (or any board without a per-application resume upload):
+1. Stop. Find the same posting at its origin — company careers page / Greenhouse
+   (`boards-api.greenhouse.io/v1/boards/{company}/jobs`) / Lever / Ashby / LinkedIn / Indeed.
+2. Continue this flow on the origin posting instead; record the origin URL in the tracker.
+3. Posting exists nowhere else → skip the job and say why.
+
 ## Step 1–3 — Detect, identify, load
 - With browser tools: snapshot the active page; read title, URL, visible fields.
 - Without: ask for a screenshot or pasted questions; never guess the form's content.
