@@ -19,9 +19,9 @@ This project is fully integrated with **Hermes Agent** via the `lambdajobs-resum
 When you give Hermes any job posting (URL or pasted description), it will:
 
 1. Parse the job following `AGENT.md` rules
-2. Tailor your resume (`summary` rewritten, bullets reordered)
+2. Tailor your resume (`summary` rewritten, bullets selected, ordered, and truthfully rewritten)
 3. Generate keyword match/missing report
-4. Create cover letter (strict style rules)
+4. Create mandatory cover letter (strict ATS + AI-screener style rules)
 5. Run `python3 lambda.py finalize` (produces 1-page PDFs + updates DB)
 6. Commit changes to git with proper changelog
 7. Show you the results + dashboard link
@@ -37,8 +37,9 @@ When you give Hermes any job posting (URL or pasted description), it will:
 
 Hermes **strictly** follows every rule in `AGENT.md`:
 - Never invents experience
-- Bullets stay verbatim (only reordering + truthful aliases allowed)
+- Bullets come from `bullet_bank.json`; truthful impact-first rewrites are allowed when anchors survive
 - Resume must be exactly 1 page
+- Cover letter must be exactly 1 page
 - Always runs `finalize` so DB and dashboard stay in sync
 
 ## Location

@@ -1,31 +1,32 @@
 # LambdaJobsAI
 
-Tailor a **1-page, ATS-optimized resume** (+ optional 1-page cover letter) for any job posting,
+Tailor a **1-page, ATS-optimized resume** plus a mandatory 1-page cover letter for any job posting,
 generate matching PDFs, save the application to SQLite, and browse everything in a localhost dashboard.
 
 The tailoring is done by **any AI agent** (Claude, GPT, Gemini, Grok, local LLM) following
-[AGENT.md](AGENT.md) — the rules — and [SKILLS.md](SKILLS.md) — what the skill does and its interface.
+[AGENT.md](AGENT.md) - the rules - and [SKILLS.md](SKILLS.md) - what the skill does and its interface.
 This repo provides the deterministic pieces around the AI:
 
-- `make_pdf.py` — XeLaTeX → 1-page resume PDF (auto-tightens across spacing levels until it fits)
-- `make_cover_letter.py` — XeLaTeX → 1-page cover letter PDF (matches the resume header)
-- `lambda.py` — CLI: init DB, finalize application, list, prereq check
-- `server.py` + `dashboard.html` — localhost dashboard at `http://localhost:8000`
-- `resume.json` / `RESUME.md` / `master_resume.json` — the master profile (never modified by tailoring)
+- `make_pdf.py` - XeLaTeX → 1-page resume PDF (auto-tightens across spacing levels until it fits)
+- `make_cover_letter.py` - XeLaTeX → 1-page cover letter PDF (matches the resume header)
+- `lambda.py` - CLI: init DB, finalize application, list, prereq check
+- `server.py` + `dashboard.html` - localhost dashboard at `http://localhost:8000`
+- `resume.json` / `RESUME.md` / `master_resume.json` - the master profile (never modified by tailoring)
 
 ## How v3 tailoring works (the short version)
-1. **Fetch the full JD** (browser, since job boards are JS-rendered) — not just a search snippet.
-2. **Fit gate** — drop guaranteed auto-rejects (required degree/citizenship/ML the candidate lacks);
+1. **Fetch the full JD** (browser, since job boards are JS-rendered) - not just a search snippet.
+2. **Fit gate** - drop guaranteed auto-rejects (required degree/citizenship/ML the candidate lacks);
    flag soft caveats (hybrid, contract, high years).
-3. **Dual-scorer keyword coverage** — ≥ 90% for literal ATS matchers (exact JD token spelling)
+3. **Dual-scorer keyword coverage** - ≥ 90% for literal ATS matchers (exact JD token spelling)
    AND natural evidence-based prose for AI/semantic screeners (no stuffing, title mirroring).
-4. **Bullet bank** — select 16 Pinestack + 6 Symanto bullets from tagged `bullet_bank.json`,
+4. **Bullet bank** - select 16 Pinestack + 6 Symanto bullets from tagged `bullet_bank.json`,
    order by JD relevance (top-3 rule), rewrite impact-first; core anchors (React, React Native,
    Vue, TypeScript, Node.js, Swift, Kotlin, .NET) always survive.
-5. **Aggressive-but-plausible** — weave truthful/adjacent keywords into the real bullets; never
+5. **Aggressive-but-plausible** - weave truthful/adjacent keywords into the real bullets; never
    fabricate employers, dates, metrics, or tools with zero adjacency.
-6. **1 page, always** — auto-fit; add `authorization` line.
-7. **Verify deterministically** — `python3 verify_ats.py output/{slug}/application.json` extracts
+6. **1 page, always** - auto-fit; add `authorization` line.
+7. **Cover letter, always** - 250-330 words, company-specific, ATS/AI-screener optimized, built as a 1-page PDF.
+8. **Verify deterministically** - `python3 verify_ats.py output/{slug}/application.json` extracts
    the real PDF text and gates shipping → **finalize** (DB + dashboard).
 
 See [AGENT.md](AGENT.md) for the full protocol and the truthfulness boundary.
@@ -55,7 +56,7 @@ python3 lambda.py init      # creates data/ and output/, applies schema
 
 The agent reads `AGENT.md` + `SKILLS.md`, then:
 
-1. parses the job and **fetches the full JD** (URL, pasted text, or natural language — any language),
+1. parses the job and **fetches the full JD** (URL, pasted text, or natural language - any language),
 2. runs the **fit gate**, tailors, and writes `output/<slug>/application.json` + `cover_letter.txt` +
    `keyword_report.json` + `job_description.txt`,
 3. calls `python3 lambda.py finalize ...` (builds PDFs and inserts DB rows).
@@ -87,7 +88,7 @@ Search, filter, change status, delete, view PDFs inline.
 ├── verify_ats.py             # deterministic post-build ATS verification (hard gate)
 ├── scripts/scrapers/unified_job_scraper.py  # Indeed+LinkedIn+Google (JobSpy) + filters + dedup
 ├── scripts/scrapers/builtin_scraper.py      # BuiltIn (plain HTTP, posted-age on cards)
-├── scripts/scrapers/wellfound_scraper.py    # Wellfound (CloakBrowser visible — DataDome)
+├── scripts/scrapers/wellfound_scraper.py    # Wellfound (CloakBrowser visible - DataDome)
 ├── data/portals.yml          # company watchlist (ATS APIs for zero-cost scans)
 ├── SKILLS.md                 # what the skill does + interface + batch recipe
 ├── RESUME.md                 # human-readable master resume
