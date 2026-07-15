@@ -56,9 +56,9 @@ FOREIGN = ["india", "canada", "united kingdom", " uk", "germany", "france", "pol
            "paris", "amsterdam", "dublin", "sydney", "tokyo", "emea", "apac", "latam"]
 
 
-def location_ok(loc: str) -> bool:
+def location_ok(loc: str | None) -> bool:
     """Keep US/remote/unspecified; drop clearly-foreign locations."""
-    low = loc.lower()
+    low = (loc or "").lower()
     if not low.strip():
         return True
     if any(f in low for f in FOREIGN):
