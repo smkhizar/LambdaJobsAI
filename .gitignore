@@ -9,3 +9,22 @@ output_log.txt
 *.log
 .vscode/
 .idea/
+
+# Personal resume/application data — bring your own, never commit
+resume.json
+master_resume.json
+master_resume.pdf
+RESUME.md
+bullet_bank.json
+base_resume.html
+cvs_application_status.txt
+RESUMES_READY_*.md
+LINKEDIN_TAILORED_*.md
+fresh_jobs_ranked_*.md
+jd_*.txt
+ksnip_*.png
+
+# Per-machine AI agent tool configs, not portable
+.claude/
+.codex
+.gemini
