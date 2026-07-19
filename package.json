@@ -1,4 +1,11 @@
 {
+  "name": "lambdajobsai",
+  "version": "1.0.0",
+  "description": "Deterministic ATS-optimized resume + cover letter tailoring engine, driven by any AI agent.",
+  "author": "Syed Muhammad Khizar Alam <smkhizar.alam@gmail.com>",
+  "repository": "smkhizar/LambdaJobsAI",
+  "license": "MIT",
+  "private": true,
   "dependencies": {
     "puppeteer": "^24.42.0"
   }

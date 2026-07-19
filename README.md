@@ -1,5 +1,8 @@
 # LambdaJobsAI
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776ab?logo=python&logoColor=white)](https://www.python.org/)
+
 Tailor a **1-page, ATS-optimized resume** plus a mandatory 1-page cover letter for any job posting,
 generate matching PDFs, save the application to SQLite, and browse everything in a localhost dashboard.
 
@@ -126,3 +129,12 @@ Search, filter, change status, delete, view PDFs inline.
 ## Hermes integration
 The `lambda-tailor` Hermes profile drives this repo. Its persona/rules live in the profile's
 `SOUL.md` and reference this repo's `AGENT.md` as the source of truth. See [hermes.md](hermes.md).
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
+
+## Author
+
+**Syed Muhammad Khizar Alam**
+[github.com/smkhizar](https://github.com/smkhizar) · smkhizar.alam@gmail.com
