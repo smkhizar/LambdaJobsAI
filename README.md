@@ -11,7 +11,7 @@ This repo provides the deterministic pieces around the AI:
 - `make_cover_letter.py` - XeLaTeX → 1-page cover letter PDF (matches the resume header)
 - `lambda.py` - CLI: init DB, finalize application, list, prereq check
 - `server.py` + `dashboard.html` - localhost dashboard at `http://localhost:8000`
-- `resume.json` / `RESUME.md` / `master_resume.json` - the master profile (never modified by tailoring)
+- `resume.json` / `RESUME.md` / `master_resume.json` - **your own** master profile, never modified by tailoring (gitignored — see "Bring your own data" below)
 
 ## How v3 tailoring works (the short version)
 1. **Fetch the full JD** (browser, since job boards are JS-rendered) - not just a search snippet.
@@ -45,6 +45,23 @@ Check everything at once:
 python3 lambda.py check     # macOS / Linux
 py     lambda.py check      # Windows
 ```
+
+## Bring your own data
+
+This repo is the engine, not a resume. Nothing personal ships in it — you provide these files
+at the repo root before running anything (all gitignored, so they stay out of your own commits too):
+
+| File | Required | Purpose |
+|------|----------|---------|
+| `resume.json` | Yes | Source-of-truth structured resume the tailoring reads (`personal_info`, `summary`, `experience`, `skills`, `education`). |
+| `bullet_bank.json` | Yes | Tagged pool of resume bullets the tailoring selects/orders from per job. |
+| `RESUME.md` | Optional | Human-readable copy of your resume, for your own reference. |
+| `master_resume.json` | Optional | Extended profile with more detail than the tailored resume ever shows. |
+| `base_resume.html` | Optional | A static web preview of your resume design. |
+| `data/portals.yml` | Optional | Company watchlist for the ATS API scraper (`SCRAPING.md`). |
+
+See `AGENT.md` for the exact schema each tailoring rule expects, and `SKILLS.md` for the bullet-bank
+tag format.
 
 ## First-time setup
 
@@ -84,16 +101,16 @@ Search, filter, change status, delete, view PDFs inline.
 ├── SCRAPING.md               # job-scraping toolkit for any agent (interpreter + version protocol)
 ├── APPLY.md                  # live application-form assistant instructions
 ├── SEARCH_TITLES.md          # scraping query priorities 1-5
-├── bullet_bank.json          # tagged bullet pool (tailoring selects from this)
+├── bullet_bank.json          # (you provide, gitignored) tagged bullet pool
 ├── verify_ats.py             # deterministic post-build ATS verification (hard gate)
 ├── scripts/scrapers/unified_job_scraper.py  # Indeed+LinkedIn+Google (JobSpy) + filters + dedup
 ├── scripts/scrapers/builtin_scraper.py      # BuiltIn (plain HTTP, posted-age on cards)
 ├── scripts/scrapers/wellfound_scraper.py    # Wellfound (CloakBrowser visible - DataDome)
-├── data/portals.yml          # company watchlist (ATS APIs for zero-cost scans)
+├── data/portals.yml          # (you provide, gitignored) company watchlist
 ├── SKILLS.md                 # what the skill does + interface + batch recipe
-├── RESUME.md                 # human-readable master resume
-├── resume.json               # source-of-truth structured resume
-├── master_resume.json        # extended master profile
+├── RESUME.md                 # (you provide, gitignored) human-readable master resume
+├── resume.json               # (you provide, gitignored) source-of-truth structured resume
+├── master_resume.json        # (you provide, gitignored) extended master profile
 ├── resume_template.tex       # XeLaTeX template for the resume PDF
 ├── cover_letter_template.tex # XeLaTeX template for the cover letter PDF
 ├── make_pdf.py               # tailored JSON → 1-page PDF (auto-fit)
@@ -101,7 +118,7 @@ Search, filter, change status, delete, view PDFs inline.
 ├── lambda.py                 # CLI orchestrator (init / check / finalize / list)
 ├── server.py                 # dashboard HTTP server
 ├── dashboard.html            # dashboard UI (no build step)
-├── base_resume.html          # web preview of the resume design
+├── base_resume.html          # (you provide, gitignored) web preview of the resume design
 ├── data/                     # SQLite DB (gitignored)
 └── output/                   # per-company tailored files (gitignored)
 ```
